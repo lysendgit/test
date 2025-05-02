@@ -68,7 +68,7 @@ name = l2tp-vpn
 ppp debug = yes
 pppoptfile = /etc/ppp/options.xl2tpd
 length bit = yes
-文件结束
+EOF
 
 # 配置PPP选项
 cat > /etc/ppp/options.xl2tpd <<EOF
@@ -93,7 +93,7 @@ EOF
 echo "配置PPP认证..."
 read -p "请输入VPN用户名：" username
 read -s -p "请输入VPN密码：" password
-回显"$用户名 * $密码 *" > /etc/ppp/chap-secrets
+echo "$username * $password *" > /etc/ppp/chap-secrets
 
 # 配置IP转发和NAT
 echo "配置IP转发和NAT..."
@@ -111,21 +111,21 @@ systemctl start strongswan xl2tpd
 # 配置防火墙
 echo "配置防火墙..."
 firewall-cmd --permanent --add-port 500/udp
-firewall-cmd --永久 --添加-端口 4500/udp
-firewall-cmd --永久 --添加-端口 1701/udp
-firewall-cmd --永久 --添加- masquerade
-firewall-cmd --重新加载
+firewall-cmd --permanent --add-port 4500/udp
+firewall-cmd --permanent --add-port 1701/udp
+firewall-cmd --permanent --add-masquerade
+firewall-cmd --reload
 
 # 完成提示
-回显"==============================================="
-回显“VPN服务器已安装完成！”
+echo "==============================================="
+echo "VPN服务器已安装完成！"
 echo "预共享密钥: $psk"
-回显 "用户名: $username"
-echo 「客户端连接时请使用以下参数：」
+echo "用户名: $username"
+echo "客户端连接时请使用以下参数："
 echo "服务器IP: $(hostname -I | awk '{print $1}')"
 echo "协议: L2TP/IPsec PSK"
-回显"-----------------------------------------------"
-echo 「请在阿里云控制台开放UDP 500, 4500, 1701端口」
+echo "-----------------------------------------------"
+echo "请在阿里云控制台开放UDP 500, 4500, 1701端口"
 echo "测试连接命令："
 echo "Windows: rasdial 连接名称 用户名 密码"
 echo "Android/iOS: 使用支持L2TP/IPsec的客户端"
