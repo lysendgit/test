@@ -45,11 +45,9 @@ conn L2TP-PSK-noNAT
     dpdaction=restart
 EOF
 
-# 配置预共享密钥
+# 配置预共享密钥（PSK）
 echo "配置预共享密钥..."
-read -p "请输入预共享密钥（PSK）：" psk
-psk=${psk:-"your_psk_here"}
-echo "$psk $psk" > /etc/ipsec.secrets
+echo "zs zs" > /etc/ipsec.secrets  # 双边均使用zs作为密钥
 
 # 配置XL2TPD
 echo "配置XL2TPD..."
@@ -89,11 +87,9 @@ proxyarp
 connect-delay 5000
 EOF
 
-# 配置PPP认证
+# 配置PPP认证（固定账号密码）
 echo "配置PPP认证..."
-read -p "请输入VPN用户名：" username
-read -s -p "请输入VPN密码：" password
-echo "$username * $password *" > /etc/ppp/chap-secrets
+echo "ss * ss123 *" > /etc/ppp/chap-secrets  # 用户名ss，密码ss123
 
 # 配置IP转发和NAT
 echo "配置IP转发和NAT..."
@@ -119,13 +115,14 @@ firewall-cmd --reload
 # 完成提示
 echo "==============================================="
 echo "VPN服务器已安装完成！"
-echo "预共享密钥: $psk"
-echo "用户名: $username"
+echo "预共享密钥: zs"
+echo "用户名: ss"
+echo "密码: ss123"
 echo "客户端连接时请使用以下参数："
 echo "服务器IP: $(hostname -I | awk '{print $1}')"
 echo "协议: L2TP/IPsec PSK"
 echo "-----------------------------------------------"
 echo "请在阿里云控制台开放UDP 500, 4500, 1701端口"
 echo "测试连接命令："
-echo "Windows: rasdial 连接名称 用户名 密码"
+echo "Windows: rasdial 连接名称 ss ss123"
 echo "Android/iOS: 使用支持L2TP/IPsec的客户端"
