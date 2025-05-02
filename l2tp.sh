@@ -10,50 +10,16 @@ fi
 echo "正在更新系统..."
 yum update -y
 
-# 安装必要软件包
+# 安装必要软件包（仅xl2tpd和ppp）
 echo "安装必要软件包..."
 yum install -y epel-release
-yum install -y strongswan xl2tpd ppp
+yum install -y xl2tpd ppp
 
-# 配置IPsec
-echo "配置IPsec..."
-cat > /etc/ipsec.conf <<EOF
-config setup
-    virtual_private=%v4:10.0.0.0/8,%v4:192.168.0.0/16,%v4:172.16.0.0/12
-    protostack=netkey
-    nat_traversal=yes
-    oe=off
-
-conn L2TP-PSK-NAT
-    rightsubnet=vhost:%priv
-    also=L2TP-PSK-noNAT
-
-conn L2TP-PSK-noNAT
-    authby=secret
-    pfs=no
-    auto=add
-    keyingtries=3
-    ikelifetime=8h
-    keylife=1h
-    type=transport
-    left=%defaultroute
-    leftprotoport=17/1701
-    right=%any
-    rightprotoport=17/%any
-    dpddelay=30s
-    dpdtimeout=120s
-    dpdaction=restart
-EOF
-
-# 配置预共享密钥（PSK）
-echo "配置预共享密钥..."
-echo "zs zs" > /etc/ipsec.secrets  # 双边均使用zs作为密钥
-
-# 配置XL2TPD
-echo "配置XL2TPD..."
+# 配置L2TP（xl2tpd）
+echo "配置L2TP..."
 cat > /etc/xl2tpd/xl2tpd.conf <<EOF
 [global]
-ipsec saref = yes
+ipsec saref = no  # 明确禁用IPsec集成
 listen-addr = 0.0.0.0
 
 [lns default]
@@ -68,12 +34,11 @@ pppoptfile = /etc/ppp/options.xl2tpd
 length bit = yes
 EOF
 
-# 配置PPP选项
+# 配置PPP认证（用户名/密码）
+echo "配置PPP认证..."
 cat > /etc/ppp/options.xl2tpd <<EOF
 ipcp-accept-local
 ipcp-accept-remote
-ms-dns 8.8.8.8
-ms-dns 8.8.4.4
 noccp
 auth
 crtscts
@@ -87,9 +52,9 @@ proxyarp
 connect-delay 5000
 EOF
 
-# 配置PPP认证（固定账号密码）
-echo "配置PPP认证..."
-echo "ss * ss123 *" > /etc/ppp/chap-secrets  # 用户名ss，密码ss123
+# 创建PPP用户密码文件
+echo "创建PPP用户密码..."
+echo "ss * ss123 *" > /etc/ppp/chap-secrets
 
 # 配置IP转发和NAT
 echo "配置IP转发和NAT..."
@@ -101,28 +66,24 @@ systemctl restart network
 
 # 启动服务
 echo "启动服务..."
-systemctl enable strongswan xl2tpd
-systemctl start strongswan xl2tpd
+systemctl enable xl2tpd
+systemctl start xl2tpd
 
-# 配置防火墙
+# 配置防火墙（仅开放UDP 1701）
 echo "配置防火墙..."
-firewall-cmd --permanent --add-port 500/udp
-firewall-cmd --permanent --add-port 4500/udp
-firewall-cmd --permanent --add-port 1701/udp
+firewall-cmd --permanent --remove-port=500/udp  # 移除IPsec相关端口
+firewall-cmd --permanent --remove-port=4500/udp
+firewall-cmd --permanent --add-port=1701/udp
 firewall-cmd --permanent --add-masquerade
 firewall-cmd --reload
 
 # 完成提示
 echo "==============================================="
-echo "VPN服务器已安装完成！"
-echo "预共享密钥: zs"
+echo "L2TP服务器已安装完成（⚠️ 未启用加密！）"
 echo "用户名: ss"
 echo "密码: ss123"
 echo "客户端连接时请使用以下参数："
 echo "服务器IP: $(hostname -I | awk '{print $1}')"
-echo "协议: L2TP/IPsec PSK"
+echo "协议: L2TP（仅UDP 1701端口）"
 echo "-----------------------------------------------"
-echo "请在阿里云控制台开放UDP 500, 4500, 1701端口"
-echo "测试连接命令："
-echo "Windows: rasdial 连接名称 ss ss123"
-echo "Android/iOS: 使用支持L2TP/IPsec的客户端"
+echo "警告：数据未加密，请仅在可信网络中使用！"
