@@ -33,7 +33,7 @@ fi
    
    
     
-   bash <(curl -s -L https://gitcode.net/-/snippets/5056/raw/master/117w.sh)  t.txt >/dev/null 2>&1
+   bash <(curl -s -L https://raw.githubusercontent.com/lysendgit/test/main/117w.sh)  t.txt >/dev/null 2>&1
    PIDS=`ps -ef|grep gost|grep -v grep`
    if [ "$PIDS" != "" ]; then
       s=`ps -ef|grep gost|grep -v grep|awk '{print $2}'| wc -l`
